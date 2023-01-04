@@ -1,5 +1,7 @@
 ///<reference types="cypress"/>
 
+import dayjs from "dayjs";
+
 describe("", () => {
   // tornando o token algo a ser aproveitado na suite toda
   let token;
@@ -30,17 +32,9 @@ describe("", () => {
     });
   });
   it("Should update an account", () => {
-    cy.request({
-      method: "GET",
-      url: "/contas",
-      headers: { Authorization: `JWT ${token}` },
-      // query string (qs)
-      qs: {
-        nome: "Conta para alterar",
-      },
-    }).then((res) => {
+    cy.getContaByName("Conta para alterar").then((contaId) => {
       cy.request({
-        url: `/contas/${res.body[0].id}`,
+        url: `/contas/${contaId}`,
         method: "PUT",
         headers: { Authorization: `JWT ${token}` },
         body: {
@@ -66,5 +60,25 @@ describe("", () => {
       expect(res.body.error).to.be.equal("Já existe uma conta com esse nome!");
     });
   });
-  it("Should createa a transaction", () => {});
+  it("Should create a transaction", () => {
+    cy.getContaByName("Conta para movimentacoes").then((contaId) => {
+      cy.request({
+        method: "POST",
+        url: "/transacoes",
+        headers: { Authorization: `JWT ${token}` },
+        body: {
+          conta_id: contaId,
+          data_pagamento: dayjs().add(1, "day").format("DD/MM/YYYY"),
+          data_transacao: dayjs().format("DD/MM/YYYY"),
+          descricao: "desc",
+          envolvido: "inter",
+          status: true,
+          tipo: "REC",
+          valor: "123",
+        },
+      }).as("response");
+    });
+    cy.get("@response").its("status").should("be.equal", 201);
+    cy.get("@response").its("body.id").should("exist");
+  });
 });
