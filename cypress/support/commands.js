@@ -51,6 +51,8 @@ Cypress.Commands.add("getToken", (user, passwd) => {
     .its("body.token")
     .should("not.be.empty")
     .then((token) => {
+      // declaracao e valor da variável token
+      Cypress.env("token", token);
       return token;
     });
 });
@@ -81,4 +83,17 @@ Cypress.Commands.add("getContaByName", (name) => {
       return res.body[0].id;
     });
   });
+});
+
+// Sobreescrevendo o método request do cypress
+Cypress.Commands.overwrite("request", (originalFn, ...options) => {
+  const token = Cypress.env("token");
+  if (options.length === 1) {
+    if (token) {
+      options[0].headers = {
+        Authorization: `JWT ${token}`,
+      };
+    }
+  }
+  return originalFn(...options);
 });
